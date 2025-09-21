@@ -18,7 +18,7 @@ export const MedicationModel = {
         `
         id, sku, name, description, price, quantity,
         categories ( id, name ),
-        suppliers ( id, name, email, phone ),
+        suppliers ( id, name, email, phone )
       `
       )
       .eq("id", id)
@@ -51,4 +51,52 @@ export const MedicationModel = {
     if (error) throw error;
     return { success: true };
   },
+
+  // 🔍 fungsi search
+  async searchByName(name) {
+    const { data, error } = await supabase
+      .from("medications")
+      .select(
+        "id, sku, name, description, price, quantity, category_id, supplier_id"
+      )
+      .ilike("name", `%${name}%`); // pakai ilike biar case-insensitive
+    if (error) throw error;
+    return data;
+  },
+
+  // pagination
+  async getAllWithPagination(page, limit) {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await supabase
+      .from("medications")
+      .select(
+        "id, sku, name, description, price, quantity, category_id, supplier_id",
+        { count: "exact" }
+      )
+      .range(from, to);
+
+    if (error) throw error;
+
+    return {
+      data,
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    };
+  },
+
+  async getTotalCount() {
+    const { count, error } = await supabase
+      .from("medications")
+      .select("*", { count: "exact", head: true }); 
+      // head: true → biar cuma hitung tanpa ambil data
+
+    if (error) throw error;
+    return count;
+  },
+
+
 };
